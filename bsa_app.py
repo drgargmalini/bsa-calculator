@@ -142,6 +142,17 @@ if st.button("Calculate"):
                     "formal assessment should use validated growth charts."
                 )
 
+st.markdown("---")
+
+st.markdown(
+    """
+    **Developed by**  
+    🩺 **Dr Malini Avinash Gupta**  
+    MD (Medicine) | Clinical Hematology  
+    """
+)
+
+
 # ---- Disclaimer ----
 st.markdown("---")
 st.caption(
@@ -149,3 +160,4 @@ st.caption(
     "Clinical decisions should not be based solely on this tool. "
     "The developer is not responsible for clinical outcomes."
 )
+
