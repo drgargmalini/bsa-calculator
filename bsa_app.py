@@ -11,3 +11,17 @@ if st.button("Calculate BSA"):
     st.success(f"BSA: {bsa:.2f} m²")
 
 st.caption("Formula: Mosteller")
+
+
+
+
+
+
+
+
+st.markdown("---")
+st.caption(
+    "⚠️ Disclaimer: This calculator is for educational purposes only. "
+    "Clinical decisions should not be based solely on this tool. "
+    "The developer is not responsible for clinical outcomes."
+)
