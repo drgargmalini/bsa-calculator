@@ -147,8 +147,7 @@ st.markdown("---")
 st.markdown(
     """
     **Developed by**  
-    🩺 **Dr Malini Avinash Gupta**  
-    MD (Medicine) | Clinical Hematology  
+    🩺 **Dr Malini Avinash Gupta**   
     """
 )
 
@@ -160,4 +159,5 @@ st.caption(
     "Clinical decisions should not be based solely on this tool. "
     "The developer is not responsible for clinical outcomes."
 )
+
 
