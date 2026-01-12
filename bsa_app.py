@@ -1,11 +1,20 @@
 import streamlit as st
 import math
 
-st.set_page_config(page_title="BSA & BMI Calculator", page_icon="🩺")
+# -------------------------------------------------
+# Page config
+# -------------------------------------------------
+st.set_page_config(
+    page_title="BSA & BMI Calculator",
+    page_icon="🩺",
+    layout="centered"
+)
 
 st.title("🩺 BSA & BMI Calculator")
 
-# ---- Patient Type ----
+# -------------------------------------------------
+# Patient type
+# -------------------------------------------------
 patient_type = st.radio(
     "Select patient type",
     ["Adult", "Pediatric"],
@@ -14,7 +23,9 @@ patient_type = st.radio(
 
 st.markdown("---")
 
-# ---- Pediatric-specific inputs ----
+# -------------------------------------------------
+# Pediatric-specific inputs
+# -------------------------------------------------
 if patient_type == "Pediatric":
     col_age, col_sex = st.columns(2)
 
@@ -29,7 +40,15 @@ if patient_type == "Pediatric":
     with col_sex:
         sex = st.selectbox("Sex", ["Male", "Female"])
 
-# ---- Common inputs ----
+# -------------------------------------------------
+# Adult sex input (needed for IBW)
+# -------------------------------------------------
+if patient_type == "Adult":
+    sex = st.selectbox("Sex", ["Male", "Female"])
+
+# -------------------------------------------------
+# Common inputs
+# -------------------------------------------------
 height = st.number_input(
     "Height (cm)",
     min_value=30.0 if patient_type == "Pediatric" else 50.0,
@@ -38,51 +57,69 @@ height = st.number_input(
 )
 
 weight = st.number_input(
-    "Weight (kg)",
+    "Actual Body Weight (kg)",
     min_value=2.0 if patient_type == "Pediatric" else 10.0,
     max_value=100.0 if patient_type == "Pediatric" else 300.0,
     step=0.1
 )
 
-# ---- Calculate ----
+# -------------------------------------------------
+# Calculate
+# -------------------------------------------------
 if st.button("Calculate"):
     if height <= 0 or weight <= 0:
         st.error("Please enter valid height and weight values.")
     else:
-        # ---- Calculations ----
-        bsa = math.sqrt((height * weight) / 3600)
         height_m = height / 100
-        bmi = weight / (height_m ** 2)
+
+        # Actual BMI & BSA
+        actual_bmi = weight / (height_m ** 2)
+        actual_bsa = math.sqrt((height * weight) / 3600)
 
         st.markdown("## 📊 Results")
-        col1, col2 = st.columns(2)
 
-        with col1:
-            st.metric("Body Surface Area (BSA)", f"{bsa:.2f} m²")
-
-        with col2:
-            st.metric("Body Mass Index (BMI)", f"{bmi:.1f} kg/m²")
-
-        # ---- Clinical note for BSA ----
-        st.info(
-            "🧠 **Clinical note (BSA):** Used for chemotherapy dosing, cardiac index "
-            "calculation, renal function normalization, and physiological indexing."
-        )
-
-        # ---- BMI Interpretation ----
-        st.markdown("### 📌 BMI Interpretation")
-
-        # ---------- ADULT ----------
+        # -------------------------------------------------
+        # ADULT LOGIC
+        # -------------------------------------------------
         if patient_type == "Adult":
-            if bmi < 18.5:
+
+            # Ideal Body Weight (Devine)
+            if sex == "Male":
+                ibw = 50 + 0.9 * (height - 152)
+            else:
+                ibw = 45.5 + 0.9 * (height - 152)
+
+            ibw = max(ibw, 0)
+
+            ideal_bmi = ibw / (height_m ** 2)
+            ideal_bsa = math.sqrt((height * ibw) / 3600)
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown("### 🔹 Actual")
+                st.metric("Weight", f"{weight:.1f} kg")
+                st.metric("BMI", f"{actual_bmi:.1f} kg/m²")
+                st.metric("BSA", f"{actual_bsa:.2f} m²")
+
+            with col2:
+                st.markdown("### 🔹 Ideal (IBW-based)")
+                st.metric("Ideal Body Weight", f"{ibw:.1f} kg")
+                st.metric("Ideal BMI", f"{ideal_bmi:.1f} kg/m²")
+                st.metric("Ideal BSA", f"{ideal_bsa:.2f} m²")
+
+            # BMI interpretation (Adult)
+            st.markdown("### 📌 BMI Interpretation (Adult)")
+
+            if actual_bmi < 18.5:
                 status = "Underweight"
                 color = "🔵"
                 ref = "< 18.5"
-            elif 18.5 <= bmi < 25:
+            elif 18.5 <= actual_bmi < 25:
                 status = "Normal"
                 color = "🟢"
                 ref = "18.5 – 24.9"
-            elif 25 <= bmi < 30:
+            elif 25 <= actual_bmi < 30:
                 status = "Overweight"
                 color = "🟠"
                 ref = "25.0 – 29.9"
@@ -98,31 +135,40 @@ if st.button("Calculate"):
                 """
             )
 
-            st.markdown(
-                """
-                **Adult BMI reference (WHO):**
-                - Normal: 18.5 – 24.9  
-                - Overweight: 25.0 – 29.9  
-                - Obesity: ≥ 30.0
-                """
+            st.info(
+                "🧠 **Clinical note:** Ideal Body Weight (Devine formula) is commonly used "
+                "for dose calculations in obese or underweight adults. "
+                "Clinical judgement is essential."
             )
 
-        # ---------- PEDIATRIC ----------
+        # -------------------------------------------------
+        # PEDIATRIC LOGIC
+        # -------------------------------------------------
         else:
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.metric("Actual Weight", f"{weight:.1f} kg")
+
+            with col2:
+                st.metric("BMI", f"{actual_bmi:.1f} kg/m²")
+
+            st.metric("BSA", f"{actual_bsa:.2f} m²")
+
             if age_years < 2:
                 st.warning(
-                    "📌 **Note:** BMI is not recommended for children under 2 years. "
+                    "📌 **Pediatric note:** BMI is not recommended for children under 2 years. "
                     "Use weight-for-length charts instead."
                 )
             else:
-                # Simplified CDC percentile-based classification
-                if bmi < 14:
+                # Approximate percentile categories
+                if actual_bmi < 14:
                     p_status = "Underweight (<5th percentile)"
                     color = "🔵"
-                elif 14 <= bmi < 17:
+                elif 14 <= actual_bmi < 17:
                     p_status = "Healthy weight (5th–85th percentile)"
                     color = "🟢"
-                elif 17 <= bmi < 19:
+                elif 17 <= actual_bmi < 19:
                     p_status = "Overweight (85th–95th percentile)"
                     color = "🟠"
                 else:
@@ -130,34 +176,41 @@ if st.button("Calculate"):
                     color = "🔴"
 
                 st.markdown(
-                    f"""
-                    {color} **Pediatric BMI Category:** {p_status}
-                    """
+                    f"{color} **Pediatric BMI Category:** {p_status}"
                 )
 
                 st.info(
                     "📘 **Reference:** Pediatric BMI interpretation is based on "
                     "CDC age- and sex-specific percentile charts (2–18 years). "
-                    "This tool provides an approximate classification; "
-                    "formal assessment should use validated growth charts."
+                    "This tool provides an approximate classification."
                 )
 
-st.markdown("---")
+        # -------------------------------------------------
+        # BSA clinical note (common)
+        # -------------------------------------------------
+        st.info(
+            "🧠 **Clinical note (BSA):** BSA is used for chemotherapy dosing, "
+            "cardiac index calculation, renal function normalization, "
+            "and physiological indexing."
+        )
 
+# -------------------------------------------------
+# Branding
+# -------------------------------------------------
+st.markdown("---")
 st.markdown(
     """
     **Developed by**  
-    🩺 **Dr Malini Avinash Gupta**   
+    🩺 **Dr Malini Avinash Gupta**  
     """
 )
 
-
-# ---- Disclaimer ----
-st.markdown("---")
+# -------------------------------------------------
+# Disclaimer
+# -------------------------------------------------
 st.caption(
     "⚠️ Disclaimer: This calculator is for educational purposes only. "
     "Clinical decisions should not be based solely on this tool. "
     "The developer is not responsible for clinical outcomes."
 )
-
 
